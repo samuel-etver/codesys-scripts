@@ -1,0 +1,4 @@
+LaserComm. 
+Function Block for Innovance InoProShop (V1.9.0.1).
+
+Connection to Laser via TCP/IP.

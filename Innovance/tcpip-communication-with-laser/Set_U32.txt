@@ -1,0 +1,13 @@
+METHOD Set_U32 : WORD
+VAR_INPUT
+    pData: POINTER TO BYTE;
+    Value: DWORD;
+END_VAR
+
+
+pData[0] := TO_BYTE(16#FF AND Value);
+pData[1] := TO_BYTE(16#FF AND (Value / 16#100));
+pData[2] := TO_BYTE(16#FF AND (Value / 16#10000));
+pData[3] := TO_BYTE(16#FF AND (Value / 16#1000000));
+
+Set_U32 := 0;

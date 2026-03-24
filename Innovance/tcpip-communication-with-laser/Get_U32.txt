@@ -1,0 +1,10 @@
+METHOD Get_U32 : DWORD
+VAR_INPUT
+    pData: POINTER TO BYTE;
+END_VAR
+
+
+Get_U32 := (BYTE_TO_WORD(pData[0])) OR
+           (BYTE_TO_WORD(pData[1]) * 16#100) OR 
+ 	   (BYTE_TO_WORD(pData[2]) * 16#10000) OR
+	   (BYTE_TO_WORD(pData[3]) * 16#1000000);

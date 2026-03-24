@@ -1,0 +1,9 @@
+METHOD Get_U8 : WORD
+VAR_INPUT
+    pData: POINTER TO BYTE;
+END_VAR
+
+
+Get_U8 := BYTE_TO_WORD(pData[0]);
+
+		   

@@ -1,0 +1,23 @@
+METHOD Calc_CRC16 : WORD
+VAR_INPUT
+    pData : POINTER TO BYTE; 
+    Len   : INT;  
+END_VAR
+VAR
+    Crc   : WORD := 0;
+    I, J  : INT;
+END_VAR
+
+
+FOR I := 0 TO Len - 1 DO
+    Crc := Crc XOR pData[I];
+    FOR J := 0 TO 7 DO
+        IF (Crc AND 16#0001) <> 0 THEN
+            Crc := SHR(crc, 1) XOR 16#A001;
+        ELSE
+            Crc := SHR(Crc, 1);
+        END_IF
+    END_FOR
+END_FOR
+
+Calc_CRC16 := crc;

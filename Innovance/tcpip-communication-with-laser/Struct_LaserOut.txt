@@ -1,0 +1,37 @@
+{ attribute 'pack_mode' := ''}
+TYPE Struct_LaserOut :
+STRUCT
+    wRecvCounter: WORD := 0;
+    rSetPower: REAL := 0;
+    rOutputPower: REAL := 0;
+    rTempMean: REAL := 0;
+    rTempMin: REAL := 0;
+    rTempMax: REAL := 0;
+    rWaterFlow: REAL := 0;	
+    wModuleWithMinTemp: WORD := 0;
+    wModuleWithMaxTemp: WORD := 0;
+    rUControl: REAL := 0;
+    rSideSpotPower1: REAL := 0;
+    rSideSpotPower2: REAL := 0;
+    rSetSideSpotPower1: REAL := 0;
+    rSetSideSpotPower2: REAL := 0;
+    rOutputPeakPower: REAL := 0;
+    rCustomerOutputPower: REAL := 0;
+    rCabinetTemperature: REAL := 0;        // Температура
+    rHumidity: REAL := 0;                  // Влажность
+    rDewPoint: REAL := 0;                  // Точка росы
+    xOverheatingOfTheLaser: BOOL := FALSE; // Перегрев лазера
+    xHighBackReflection: BOOL := FALSE;    // Сильное обр. отражение
+    xLaserModuleIsFailed: BOOL := FALSE;   // Ошибка лазерного модуля
+    xEStop: BOOL := FALSE;                 // Кнопка аварийной остановки
+    xOverheatingOfElectronicOfTheLaser: BOOL := FALSE; // Перегрев блока электроники
+    xCombinerWasFailed: BOOL := FALSE;     // Комбайнер неисправен
+    xErrorOfInit: BOOL := FALSE;           // Ошибка инициализации
+    xWaterInLaser: BOOL := FALSE;          // Вода в лазере
+    xCriticalError: BOOL := FALSE;         // Критическая ошибка
+    xProblemWithACPower: BOOL := FALSE;    // Ошибка источника питания	
+    xAlarmFromSpliceBox: BOOL := FALSE;    // Ошибка в сплайс модуле
+    xLaserTempIsTooLow: BOOL := FALSE;     // Низкая темература лазера
+    xDewPointTempIsTooHigh: BOOL := FALSE; // Высокая температура точки росы
+END_STRUCT
+END_TYPE

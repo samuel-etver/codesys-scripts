@@ -1,0 +1,9 @@
+METHOD Get_U16 : WORD
+VAR_INPUT
+    pData: POINTER TO BYTE;
+END_VAR
+
+
+Get_U16 := (BYTE_TO_WORD(pData[0])) OR
+           (BYTE_TO_WORD(pData[1]) * 16#100);
+		   

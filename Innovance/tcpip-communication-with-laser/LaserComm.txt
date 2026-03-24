@@ -1,0 +1,151 @@
+FUNCTION_BLOCK PUBLIC LaserComm
+VAR_INPUT
+    sIp: STRING;
+    xEnable: BOOL := FALSE;
+    tPeriod: TIME := T#1S;
+END_VAR
+VAR_OUTPUT
+    stOut: Struct_LaserOut;
+    xReady: BOOL := FALSE;
+    xOnline: BOOL := FALSE;
+END_VAR
+VAR
+    fbClient: NBS.TCP_Client;	
+    fbRead: NBS.TCP_Read;
+    fbWrite: NBS.TCP_Write;
+    sWrBuff1: STRING(16);
+    sWrBuff2: STRING[16];
+    pWrBuff: POINTER TO STRING;
+    sRdBuff: STRING(512);
+    fbDelay: TON;
+    fbWatchdog: TON;
+
+    sIpAddr: NBS.IP_ADDR;
+    uiLaserPort: UINT := 5100;	
+	
+    xPacket: BOOL := TRUE;
+    wCrc: WORD;
+    iIdx: INT := 8;
+    wCmd: WORD := 0;
+    wStep: WORD := 1;
+	
+    dwStatus1: DWORD := 0;
+    dwStatus2: DWORD := 0;
+    dwAlarm1: DWORD := 0;
+    dwAlarm2: DWORD := 0;
+    dwWarning1: DWORD := 0;
+    dwWarning2: DWORD := 0;
+END_VAR
+
+
+IF xPacket THEN
+    xPacket := FALSE;
+    Set_U16(ADR(sWrBuff1[0]), 2001);
+    Set_U16(ADR(sWrBuff1[2]), 0);
+    Set_U32(ADR(sWrBuff1[4]), 0);
+    wCrc := Calc_CRC16(ADR(sWrBuff1), 8);
+    Set_U16(ADR(sWrBuff1[8]), wCrc);
+	
+    Set_U16(ADR(sWrBuff2[0]), 2032);
+    Set_U16(ADR(sWrBuff2[2]), 0);
+    Set_U16(ADR(sWrBuff2[4]), 0);
+    wCrc := Calc_CRC16(ADR(sWrBuff2), 8);
+    Set_U16(ADR(sWrBuff2[8]), wCrc);
+END_IF
+
+
+sIpAddr.sAddr := sIp;
+
+fbClient(
+	xEnable := xEnable,
+	ipAddr := sIpAddr,
+	uiPort := uiLaserPort,
+	udiTimeOut := 5000000
+);
+
+
+fbDelay(IN := NOT fbDelay.Q, PT := tPeriod / 2);
+
+IF wStep = 1 THEN
+    pWrBuff := ADR(sWrBuff1);
+ELSE
+    pWrBuff := ADR(sWrBuff2);
+END_IF
+
+
+fbWrite(
+	xExecute := fbClient.xActive AND fbDelay.Q,
+	hConnection := fbClient.hConnection,
+	pData := pWrBuff,
+	szSize := 10
+);
+
+
+fbRead(
+	xEnable := fbClient.xActive,
+	hConnection := fbClient.hConnection,
+	pData := ADR(sRdBuff),
+	szSize := SIZEOF(sRdBuff)
+);
+
+
+xReady := FALSE;
+wCmd := Get_U16(ADR(sRdBuff[0]));
+
+IF fbRead.xReady AND (wCmd = 2001) THEN
+    wStep := 2;
+    stOut.wRecvCounter := stOut.wRecvCounter + 1;
+    stOut.rSetPower := DWORD_TO_REAL(Get_U32(ADR(sRdBuff[4 + iIdx])));
+    stOut.rOutputPower := DWORD_TO_REAL(Get_U32(ADR(sRdBuff[8 + iIdx])));
+    stOut.rTempMean := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[12 + iIdx])));
+    stOut.rTempMin := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[14 + iIdx])));
+    stOut.rTempMax := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[16 + iIdx])));
+    stOut.wModuleWithMinTemp := Get_U8(ADR(sRdBuff[18 + iIdx]));
+    stOut.wModuleWithMaxTemp := Get_U8(ADR(sRdBuff[19 + iIdx]));
+    dwStatus1 := Get_U32(ADR(sRdBuff[22 + iIdx]));
+    dwStatus2 := Get_U32(ADR(sRdBuff[26 + iIdx]));
+	
+    dwAlarm1 := Get_U32(ADR(sRdBuff[30 + iIdx]));
+    stOut.xOverheatingOfTheLaser := Has_Bit(dwAlarm1, 1);
+    stOut.xHighBackReflection := Has_Bit(dwAlarm1, 2);
+    stOut.xLaserModuleIsFailed := Has_Bit(dwAlarm1, 5);
+    stOut.xEStop := Has_Bit(dwAlarm1, 6);	
+    stOut.xOverheatingOfElectronicOfTheLaser := Has_Bit(dwAlarm1, 7);
+    stOut.xCombinerWasFailed := Has_Bit(dwAlarm1, 17);
+    stOut.xErrorOfInit := Has_Bit(dwAlarm1, 19);
+    stOut.xWaterInLaser := Has_Bit(dwAlarm1, 24);
+    stOut.xCriticalError := Has_Bit(dwAlarm1, 25);	
+    stOut.xProblemWithACPower := Has_Bit(dwAlarm1, 30);
+	
+    dwAlarm2 := Get_U32(ADR(sRdBuff[34 + iIdx]));
+    stOut.xAlarmFromSpliceBox := Has_Bit(dwAlarm2, 4);
+    stOut.xLaserTempIsTooLow := Has_Bit(dwAlarm2, 7);	
+    stOut.xDewPointTempIsTooHigh := Has_Bit(dwAlarm2, 12);
+	
+    dwWarning1 := Get_U32(ADR(sRdBuff[38 + iIdx]));
+    dwWarning2 := Get_U32(ADR(sRdBuff[42 + iIdx]));
+    stOut.rUControl := WORD_TO_REAL(Get_U16(ADR(sRdBuff[160 + iIdx])));
+    stOut.rSideSpotPower1 := WORD_TO_REAL(Get_U16(ADR(sRdBuff[168 + iIdx])));
+    stOut.rSideSpotPower2 := WORD_TO_REAL(Get_U16(ADR(sRdBuff[170 + iIdx])));
+    stOut.rSetSideSpotPower1 := WORD_TO_REAL(Get_U16(ADR(sRdBuff[172 + iIdx])));
+    stOut.rSetSideSpotPower2 := WORD_TO_REAL(Get_U16(ADR(sRdBuff[174 + iIdx])));
+    stOut.rOutputPeakPower := DWORD_TO_REAL(Get_U32(ADR(sRdBuff[176 + iIdx])));
+    stOut.rCustomerOutputPower := DWORD_TO_REAL(Get_U32(ADR(sRdBuff[180 + iIdx])));
+    stOut.rWaterFlow := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[166 + iIdx])));	
+END_IF
+
+
+IF fbRead.xReady AND (wCmd = 2032) THEN
+    xReady := TRUE;
+    wStep := 1;
+    xOnline := TRUE;
+    stOut.rCabinetTemperature := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[2 + iIdx])));
+    stOut.rHumidity := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[4 + iIdx])));
+    stOut.rDewPoint := 0.1 * WORD_TO_REAL(Get_U16(ADR(sRdBuff[6 + iIdx])));
+END_IF
+
+
+fbWatchdog(IN := NOT xReady, PT := T#60S);
+IF fbWatchdog.Q THEN
+    xOnline := FALSE;
+END_IF

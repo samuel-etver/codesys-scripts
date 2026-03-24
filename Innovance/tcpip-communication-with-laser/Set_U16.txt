@@ -1,0 +1,11 @@
+METHOD Set_U16 : WORD
+VAR_INPUT
+    pData: POINTER TO BYTE;
+    Value: WORD;
+END_VAR
+
+
+pData[0] := TO_BYTE(Value AND 255);
+pData[1] := TO_BYTE(Value / 256);
+
+Set_U16 := 0;

@@ -1,0 +1,13 @@
+METHOD Has_Bit : BOOL
+VAR_INPUT
+    Value: DWORD;
+    N: BYTE;	
+END_VAR
+VAR
+    Mask: DWORD;
+END_VAR
+
+
+Mask := SHL(16#01, N);
+
+Has_Bit := (Value AND Mask) = Mask;
